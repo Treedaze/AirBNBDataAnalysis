@@ -1,0 +1,119 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+#imports dataset to program
+#errors here?
+import_AB <- read.csv("AB_NYC_2019.csv")
+
+#Displays names of columns with null values
+colnames(import_AB)[colSums(is.na(import_AB)) > 0]
+
+```
+
+```{r}
+##creates getmode function to return mode of the minimum nights
+#from: https://www.tutorialspoint.com/r/r_mean_median_mode.html
+ getmode <- function(v) {
+   uniqv <- unique(v)
+   uniqv[which.max(tabulate(match(v, uniqv)))]
+}
+##returns mean, median, and mode of minimum nights
+print (paste0("Mean of Minimum Nights is: ", mean(import_AB$minimum_nights)))
+print (paste0("Median of Minimum Nights is: ", median(import_AB$minimum_nights)))
+print (paste0("Mode of Minimum Nights is: ", getmode(import_AB$minimum_nights)))
+
+print (paste0("Mean of Price is: ", mean(import_AB$price)))
+print (paste0("Median of Price is: ",median(import_AB$price)))
+print (paste0("Mode of Price is: ", getmode(import_AB$price)))
+
+
+##returns how many listings have a minimum nights of over 364 days
+over364 = sum(import_AB$minimum_nights> 364)
+
+print (paste0("Listings with Minimum Nights over 364 is: ", over364))
+#creates a subset of listings over 364 days
+over364Subset = subset(import_AB, import_AB$minimum_nights> 364)
+##redoes the mean calculation, removing the outliers who have min nights of more than 360 days
+
+print (paste0("Trimmed Mean of Minimum Nights is: ", mean(import_AB$minimum_nights, trim = over364/10)))
+##returns how many AirBNB rentals are less than 30 days
+print (paste0("Amount of AirBNB rentals less that 30 days: ", sum(import_AB$minimum_nights < 30)))
+
+
+```
+
+```{r}
+#creates subset of all listings that are entire dwellings and are less that 30 days
+data = subset(import_AB, import_AB$minimum_nights < 30 & import_AB$room_type == "Entire home/apt",) 
+onlyApt = subset(import_AB, import_AB$room_type == "Entire home/apt",)
+#variables for barplot of set sizes
+structSizesNum = c(nrow(data), nrow(onlyApt), nrow(import_AB))
+structNames = c("Entire Res, < 30 days", "Entire Residence", "All AirBNB Rentals")
+
+#Plots the size of each subset, so it can be compared
+barplot(structSizesNum, main = "Number of listings in set", names.arg=structNames, ylim = c(0, 50000), ylab = "Amount of Listings", col = cm.colors(3))
+#plots the amount of AirBNB rentals that are listed for less than 30 days
+minTable = table(onlyApt$minimum_nights)
+barplot(minTable, main = "Minimum Nights for each AirBNB listings in NYC",ylim = c(0, 7000), xlab = "Minimum Nights", ylab = "Number of Residences listed", col = topo.colors(length(minTable)))
+```
+
+```{r}
+#shows the number of listings each host has
+calcHostTable = table(data$calculated_host_listings_count)
+calcHostSetWithout1 = subset(data, data$calculated_host_listings_count > 1)
+calcHostSetWithout1Table = table (calcHostSetWithout1$calculated_host_listings_count)
+#plots the Number of listings each host has in the subset "data"
+barplot(calcHostTable, ylim = c(0,20000), main = "\n Number of Listings each host has\n in Subset of less than 30 days minimum stay,\n of entire apartment rentals", xlab = "Number of listings", ylab = "Number of hosts in category", col = cm.colors(length(calcHostTable)))
+
+#plots the Number of listings each host has in the subset "data"
+barplot(calcHostSetWithout1Table, ylim = c(0,3000), main = "\n \n Number of Listings each host has\n in Subset of less than 30 days minimum stay,\n of entire apartment rentals \n without 'one' value in number of listings", xlab = "Number of listings", ylab = "Number of hosts in category", col = cm.colors(length(calcHostTable)))
+
+#returns how many hosts in the subset have one property
+oneProperty = subset(data, data$calculated_host_listings_count == 1 )
+onePropertyPerct =  length(oneProperty$calculated_host_listings_count)/ length(data$calculated_host_listings_count) * 100
+print (paste0("Number of hosts with one property: ", format(round(onePropertyPerct, 2), nsmall = 2), "%"))
+#returns how many hosts in the subset have two properties
+twoProperties = subset(data, data$calculated_host_listings_count == 2 )
+twoPropertiesPercent =  length(twoProperties$calculated_host_listings_count)/ length(data$calculated_host_listings_count) * 100
+
+print (paste0("Number of hosts with two properties: ", format(round(twoPropertiesPercent, 2), nsmall = 2), "%"))
+
+#returns the size of this subset, vs the size of the entire dataset
+dataSize = length(data$minimum_nights)/ length(import_AB$minimum_nights) * 100
+print (paste0("Size of the data subset: ", format(round(dataSize, 2), nsmall = 2), "%"))
+```
+
+```{r}
+#calls plotrix library to use pie 3d
+library(plotrix)
+#creates table from types of room in data set
+typesOfRoom = table(import_AB$room_type)
+tableVals = as.numeric(typesOfRoom)
+##calculates percentage of the types of room, then adds it to a variable
+tableSum = sum(tableVals)
+tablePercentage = c((tableVals[1]/tableSum*100),(tableVals[2]/tableSum*100),(tableVals[3]/tableSum*100))
+tablePercentage = format(round(tablePercentage, 2), nsmall = 2)
+tablePercentage = paste(tablePercentage,"%",sep="")
+colours = c("aquamarine", "blue4", "azure4")
+#creates pie chart with labels and percentages
+pielabels = c("Private Room", "Entire Apartment", "Shared Room")
+pie3D(typesOfRoom, labels = tablePercentage,explode = 0.1, main = "Types of Room in NYC on AirBNB", col = colours)
+legend("topright", pielabels, cex = 0.6,
+   fill = colours)
+```
+
+```{r}
+#pie chart of AirBNB listings affected by legislation,  organised by Borough
+colours = c("blue3", 
+  "brown", "aquamarine", "darkgreen", "orange") 
+sizeNeighborhoodGroups = table(data$neighbourhood_group)
+lbls = c("Bronx", "Brooklyn", "Manhattan", "Queens", "Staten Island")
+#png(file = "3d_pie_chart.jpg")
+pie(sizeNeighborhoodGroups,main = "AirBNB listings affected by legislation,  organised by Borough", labels = "", col = colours)
+legend("topright", lbls, cex = 0.6,
+   fill = colours)
+
+```
