@@ -7,7 +7,6 @@ output: html_notebook
 #imports dataset to program
 #errors here?
 import_AB <- read.csv("AB_NYC_2019.csv")
-
 #Displays names of columns with null values
 colnames(import_AB)[colSums(is.na(import_AB)) > 0]
 
@@ -47,10 +46,10 @@ print (paste0("Amount of AirBNB rentals less that 30 days: ", sum(import_AB$mini
 
 ```{r}
 #creates subset of all listings that are entire dwellings and are less that 30 days
-data = subset(import_AB, import_AB$minimum_nights < 30 & import_AB$room_type == "Entire home/apt",) 
+illegalListings = subset(import_AB, import_AB$minimum_nights < 30 & import_AB$room_type == "Entire home/apt",) 
 onlyApt = subset(import_AB, import_AB$room_type == "Entire home/apt",)
 #variables for barplot of set sizes
-structSizesNum = c(nrow(data), nrow(onlyApt), nrow(import_AB))
+structSizesNum = c(nrow(illegalListings), nrow(onlyApt), nrow(import_AB))
 structNames = c("Entire Res, < 30 days", "Entire Residence", "All AirBNB Rentals")
 
 #Plots the size of each subset, so it can be compared
@@ -62,28 +61,28 @@ barplot(minTable, main = "Minimum Nights for each AirBNB listings in NYC",ylim =
 
 ```{r}
 #shows the number of listings each host has
-calcHostTable = table(data$calculated_host_listings_count)
-calcHostSetWithout1 = subset(data, data$calculated_host_listings_count > 1)
+calcHostTable = table(illegalListings$calculated_host_listings_count)
+calcHostSetWithout1 = subset(illegalListings, illegalListings$calculated_host_listings_count > 1)
 calcHostSetWithout1Table = table (calcHostSetWithout1$calculated_host_listings_count)
-#plots the Number of listings each host has in the subset "data"
+#plots the Number of listings each host has in the subset "illegalListings"
 barplot(calcHostTable, ylim = c(0,20000), main = "\n Number of Listings each host has\n in Subset of less than 30 days minimum stay,\n of entire apartment rentals", xlab = "Number of listings", ylab = "Number of hosts in category", col = cm.colors(length(calcHostTable)))
 
-#plots the Number of listings each host has in the subset "data"
+#plots the Number of listings each host has in the subset "illegalListings"
 barplot(calcHostSetWithout1Table, ylim = c(0,3000), main = "\n \n Number of Listings each host has\n in Subset of less than 30 days minimum stay,\n of entire apartment rentals \n without 'one' value in number of listings", xlab = "Number of listings", ylab = "Number of hosts in category", col = cm.colors(length(calcHostTable)))
 
 #returns how many hosts in the subset have one property
-oneProperty = subset(data, data$calculated_host_listings_count == 1 )
-onePropertyPerct =  length(oneProperty$calculated_host_listings_count)/ length(data$calculated_host_listings_count) * 100
+oneProperty = subset(illegalListings, illegalListings$calculated_host_listings_count == 1 )
+onePropertyPerct =  length(oneProperty$calculated_host_listings_count)/ length(illegalListings$calculated_host_listings_count) * 100
 print (paste0("Number of hosts with one property: ", format(round(onePropertyPerct, 2), nsmall = 2), "%"))
 #returns how many hosts in the subset have two properties
-twoProperties = subset(data, data$calculated_host_listings_count == 2 )
-twoPropertiesPercent =  length(twoProperties$calculated_host_listings_count)/ length(data$calculated_host_listings_count) * 100
+twoProperties = subset(illegalListings, illegalListings$calculated_host_listings_count == 2 )
+twoPropertiesPercent =  length(twoProperties$calculated_host_listings_count)/ length(illegalListings$calculated_host_listings_count) * 100
 
 print (paste0("Number of hosts with two properties: ", format(round(twoPropertiesPercent, 2), nsmall = 2), "%"))
 
 #returns the size of this subset, vs the size of the entire dataset
-dataSize = length(data$minimum_nights)/ length(import_AB$minimum_nights) * 100
-print (paste0("Size of the data subset: ", format(round(dataSize, 2), nsmall = 2), "%"))
+illegalListingsSize = length(illegalListings$minimum_nights)/ length(import_AB$minimum_nights) * 100
+print (paste0("Size of the illegalListings subset: ", format(round(illegalListingsSize, 2), nsmall = 2), "%"))
 ```
 
 ```{r}
@@ -109,7 +108,7 @@ legend("topright", pielabels, cex = 0.6,
 #pie chart of AirBNB listings affected by legislation,  organised by Borough
 colours = c("blue3", 
   "brown", "aquamarine", "darkgreen", "orange") 
-sizeNeighborhoodGroups = table(data$neighbourhood_group)
+sizeNeighborhoodGroups = table(illegalListings$neighbourhood_group)
 lbls = c("Bronx", "Brooklyn", "Manhattan", "Queens", "Staten Island")
 #png(file = "3d_pie_chart.jpg")
 pie(sizeNeighborhoodGroups,main = "AirBNB listings affected by legislation,  organised by Borough", labels = "", col = colours)
